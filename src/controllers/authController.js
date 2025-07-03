@@ -3,11 +3,20 @@ import crypto from 'crypto';
 import dotenv from 'dotenv';
 import User from '../models/authModel.js';
 import { transporter } from '../utils/mailer.js';
+import { registerValidation } from '../validations/userValidation.js';
 dotenv.config();
 
 export const register = async (req, res) => {
   try {
+    
+    const { error } = registerValidation.validate(req.body);
+
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
     const { username, email, password } = req.body;
+    
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Bütün sahələri doldurun' });

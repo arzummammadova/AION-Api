@@ -4,20 +4,21 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-
-    },
-    email: {
+        minlength: 3,
+        maxlength: 20,
+      },
+      email: {
         type: String,
         required: true,
         unique: true,
-
-    },
-    password: {
+        match: [/.+\@.+\..+/, 'Zəhmət olmasa düzgün email daxil edin'],
+      },
+      password: {
         type: String,
         required: true,
-
-    },
-
+        minlength: 6,
+        maxlength: 60,
+      },
     role: {
         type: String,
         enum: ["admin", "user"],
