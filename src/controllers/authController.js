@@ -91,9 +91,10 @@ export const verifyEmail = async (req, res) => {
     user.emailTokenExpires = undefined;
     await user.save();
 
-    return res.status(200).json({
-      message: 'E‑poçt təsdiq olundu ✅. Artıq daxil ola bilərsiniz.',
-    });
+
+    return res.redirect(`${process.env.CLIENT_URL}/auth/email-verified-success`);
+
+    
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
