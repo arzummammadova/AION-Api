@@ -1,9 +1,11 @@
+
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import User from '../models/authModel.js';
 import { transporter } from '../utils/mailer.js';
-import { registerValidation } from '../validations/userValidation.js';
+import { loginValidation, registerValidation } from '../validations/userValidation.js';
+import jwt from 'jsonwebtoken';
 dotenv.config();
 
 export const register = async (req, res) => {
@@ -108,3 +110,51 @@ export const verifyEmail = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+export const login=async(req,res)=>{
+  try {
+    const {error}=loginValidation.validate(req.body);
+    if(error){
+      return res.status(400).json({message:error.details[0].message});
+  
+    }
+    const {email,password}=req.body;
+    const user=await User.findOne({email}).select('+password');
+    if(!user){
+      return res.status(400).json({message:'Email və ya parol yanlış'});
+    }
+    const isPasswordCorrect=await bcrypt.compare(password,user.password);
+    if(!isPasswordCorrect){
+      return res.status(400).json({message:'Email və ya parol yanlış'});
+    }
+    if(!user.isVerified){
+      return res.status(400).json({message:'Testiq edilmeyib'});
+    }
+    const payload={id:user.id,role:user.role}
+    const token=jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:'1d'});
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, 
+    });
+    return res.status(200).json({
+      message: 'Giriş uğurludur ✅',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  
+  
+    
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+
+    
+  }
+ 
+}

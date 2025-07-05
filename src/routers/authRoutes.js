@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, verifyEmail } from '../controllers/authController.js';
+import { login, register, verifyEmail } from '../controllers/authController.js';
 
 const router=express.Router();
 
@@ -89,8 +89,37 @@ const router=express.Router();
  *         description: Qeydiyyat uğurludur
  */
 
+
+
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Istiifadeci loginin
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Login uğurludur
+ */
+
 router.post('/register',register);
 router.get('/verify-email',verifyEmail)
+router.post('/login',login)
 
 
 export default router;
