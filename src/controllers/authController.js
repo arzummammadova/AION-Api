@@ -158,3 +158,19 @@ export const login=async(req,res)=>{
   }
  
 }
+
+
+export const me=async(req,res)=>{
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ message: 'Token yoxdur' });
+
+    const decoded = verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'İstifadəçi tapılmadı' });
+
+    res.json(user);
+  } catch (err) {
+    res.status(401).json({ message: 'Token etibarsızdır' });
+  }
+}
