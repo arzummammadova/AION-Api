@@ -3,6 +3,7 @@ import 'dotenv/config'
 import './src/db/connectionDB.js'
 import router from './src/routers/authRoutes.js';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 const app=express();
 const PORT=process.env.PORT || 5000;
 app.use(cors({
@@ -10,6 +11,7 @@ app.use(cors({
     credentials: true
   }));
 import { swaggerDocs } from './src/utils/swagger.js';
+app.use(cookieParser());
 
 
 swaggerDocs(app); // bunu app.listen-dən əvvəl çağır
