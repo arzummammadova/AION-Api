@@ -6,9 +6,10 @@ import cors from 'cors';
 const app=express();
 const PORT=process.env.PORT || 5000;
 app.use(cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true
+    origin: 'http://localhost:3000',  // frontend-in origin-i
+    credentials: true,                // əgər cookie, auth token və s. göndərilirsə
   }));
+  
 import { swaggerDocs } from './src/utils/swagger.js';
 
 
