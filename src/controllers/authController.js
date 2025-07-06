@@ -132,11 +132,17 @@ export const login=async(req,res)=>{
     }
     const payload={id:user.id,role:user.role}
     const token=jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:'1d'});
+    // res.cookie('token', token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production',
+    //   sameSite: 'none',
+    //   maxAge: 60 * 60 * 1000, 
+    // });
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 1000, 
+      // secure: process.env.NODE_ENV === 'production', // remove or set to false for local HTTP
+      sameSite: 'lax', // or 'none' if testing
+      maxAge: 60 * 60 * 1000,
     });
     return res.status(200).json({
       message: 'Giriş uğurludur ✅',
@@ -159,18 +165,34 @@ export const login=async(req,res)=>{
  
 }
 
-
-export const me=async(req,res)=>{
+export const me = async (req, res) => {
   try {
     const token = req.cookies.token;
-    if (!token) return res.status(401).json({ message: 'Token yoxdur' });
+    console.log('Backend: Received token from cookie:', token); // Log the token on the server
 
-    const decoded = verify(token, process.env.JWT_SECRET);
+    if (!token) {
+      console.log('Backend: No token found in cookies');
+      return res.status(401).json({ message: 'Token yoxdur' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET); // Use jwt.verify
+      console.log('Backend: Decoded token:', decoded);
+    } catch (err) {
+      console.log('Backend: Token verification failed:', err.message);
+      return res.status(401).json({ message: 'Token etibarsızdır' });
+    }
+
     const user = await User.findById(decoded.id).select('-password');
-    if (!user) return res.status(404).json({ message: 'İstifadəçi tapılmadı' });
+    if (!user) {
+      console.log('Backend: User not found after decoding token');
+      return res.status(404).json({ message: 'İstifadəçi tapılmadı' });
+    }
 
     res.json(user);
   } catch (err) {
-    res.status(401).json({ message: 'Token etibarsızdır' });
+    console.log('Backend: Server error in me function:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
-}
+};
