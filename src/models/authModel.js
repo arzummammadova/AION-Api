@@ -28,6 +28,8 @@ const UserSchema = new mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     emailToken: String,
     emailTokenExpires: Date,
+     otp: { type: String },         
+    otpExpires: { type: Date }, 
 
 }, { timestamps: true })
 

@@ -1,16 +1,18 @@
-
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
-import dotenv from 'dotenv';
-import User from '../models/authModel.js';
-import { transporter } from '../utils/mailer.js';
-import { loginValidation, registerValidation } from '../validations/userValidation.js';
-import jwt from 'jsonwebtoken';
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+import dotenv from "dotenv";
+import User from "../models/authModel.js";
+import { transporter } from "../utils/mailer.js";
+import {
+  forgotPasswordValidation,
+  loginValidation,
+  registerValidation,
+} from "../validations/userValidation.js";
+import jwt from "jsonwebtoken";
 dotenv.config();
 
 export const register = async (req, res) => {
   try {
-    
     const { error } = registerValidation.validate(req.body);
 
     if (error) {
@@ -18,20 +20,19 @@ export const register = async (req, res) => {
     }
 
     const { username, email, password } = req.body;
-    
 
     if (!username || !email || !password) {
-      return res.status(400).json({ message: 'Bütün sahələri doldurun' });
+      return res.status(400).json({ message: "Bütün sahələri doldurun" });
     }
 
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
-      return res.status(400).json({ message: 'İstifadəçi artıq mövcuddur' });
+      return res.status(400).json({ message: "İstifadəçi artıq mövcuddur" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userCount=await User.countDocuments();
-    const role=userCount===0?'admin':'user';
+    const userCount = await User.countDocuments();
+    const role = userCount === 0 ? "admin" : "user";
 
     const user = await User.create({
       username,
@@ -40,18 +41,18 @@ export const register = async (req, res) => {
       role,
     });
 
-    const emailToken = crypto.randomBytes(32).toString('hex');
+    const emailToken = crypto.randomBytes(32).toString("hex");
     user.emailToken = emailToken;
-    user.emailTokenExpires = Date.now() + 1000 * 60 * 60; 
+    user.emailTokenExpires = Date.now() + 1000 * 60 * 60;
     await user.save();
 
     const verifyURL = `${process.env.SERVER_URL}/api/auth/verify-email?token=${emailToken}&id=${user._id}`;
 
     await transporter.sendMail({
-        from: `"AION" <${process.env.EMAIL_USER}>`,
-        to: user.email,
-        subject: 'E‑poçtunuzu təsdiqləyin',
-        html: `
+      from: `"AION" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "E‑poçtunuzu təsdiqləyin",
+      html: `
           <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px;">
             <div style="max-width: 600px; margin: auto; background-color: #fff; border-radius: 10px; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
               <h2 style="color:rgb(232, 208, 77);">Salam, ${user.username}!</h2>
@@ -70,14 +71,13 @@ export const register = async (req, res) => {
             </div>
           </div>
         `,
-      });
-      
+    });
 
     return res.status(201).json({
-      message: 'Qeydiyyat uğurludur ✅  E‑poçtunuzu yoxlayın.',
+      message: "Qeydiyyat uğurludur ✅  E‑poçtunuzu yoxlayın.",
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -94,7 +94,7 @@ export const verifyEmail = async (req, res) => {
     ) {
       return res
         .status(400)
-        .json({ message: 'Link etibarsız və ya vaxtı bitib' });
+        .json({ message: "Link etibarsız və ya vaxtı bitib" });
     }
 
     user.isVerified = true;
@@ -102,50 +102,50 @@ export const verifyEmail = async (req, res) => {
     user.emailTokenExpires = undefined;
     await user.save();
 
-
-    return res.redirect(`${process.env.CLIENT_URL}/auth/email-verified-success`);
-
-    
+    return res.redirect(
+      `${process.env.CLIENT_URL}/auth/email-verified-success`
+    );
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-export const login=async(req,res)=>{
+export const login = async (req, res) => {
   try {
-    const {error}=loginValidation.validate(req.body);
-    if(error){
-      return res.status(400).json({message:error.details[0].message});
-  
+    const { error } = loginValidation.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
     }
-    const {email,password}=req.body;
-    const user=await User.findOne({email}).select('+password');
-    if(!user){
-      return res.status(400).json({message:'Email və ya parol yanlış'});
+    const { email, password } = req.body;
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res.status(400).json({ message: "Email və ya parol yanlış" });
     }
-    const isPasswordCorrect=await bcrypt.compare(password,user.password);
-    if(!isPasswordCorrect){
-      return res.status(400).json({message:'Email və ya parol yanlış'});
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Email və ya parol yanlış" });
     }
-    if(!user.isVerified){
-      return res.status(400).json({message:'Testiq edilmeyib'});
+    if (!user.isVerified) {
+      return res.status(400).json({ message: "Testiq edilmeyib" });
     }
-    const payload={id:user.id,role:user.role}
-    const token=jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:'1d'});
+    const payload = { id: user.id, role: user.role };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
     // res.cookie('token', token, {
     //   httpOnly: true,
     //   secure: process.env.NODE_ENV === 'production',
     //   sameSite: 'none',
-    //   maxAge: 60 * 60 * 1000, 
+    //   maxAge: 60 * 60 * 1000,
     // });
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
       // secure: process.env.NODE_ENV === 'production', // remove or set to false for local HTTP
-      sameSite: 'lax', // or 'none' if testing
+      sameSite: "lax", // or 'none' if testing
       maxAge: 60 * 60 * 1000,
     });
     return res.status(200).json({
-      message: 'Giriş uğurludur ✅',
+      message: "Giriş uğurludur ✅",
       token,
       user: {
         id: user._id,
@@ -154,45 +154,113 @@ export const login=async(req,res)=>{
         role: user.role,
       },
     });
-  
-  
-    
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-
-    
+    res.status(500).json({ message: "Server error", error: error.message });
   }
- 
-}
+};
 
 export const me = async (req, res) => {
   try {
     const token = req.cookies.token;
-    console.log('Backend: Received token from cookie:', token); // Log the token on the server
+    // console.log('Backend: Received token from cookie:', token);
 
     if (!token) {
-      console.log('Backend: No token found in cookies');
-      return res.status(401).json({ message: 'Token yoxdur' });
+      // console.log('Backend: No token found in cookies');
+      return res.status(401).json({ message: "Token yoxdur" });
     }
 
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET); // Use jwt.verify
-      console.log('Backend: Decoded token:', decoded);
+      // console.log('Backend: Decoded token:', decoded);
     } catch (err) {
-      console.log('Backend: Token verification failed:', err.message);
-      return res.status(401).json({ message: 'Token etibarsızdır' });
+      // console.log('Backend: Token verification failed:', err.message);
+      return res.status(401).json({ message: "Token etibarsızdır" });
     }
 
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select("-password");
     if (!user) {
-      console.log('Backend: User not found after decoding token');
-      return res.status(404).json({ message: 'İstifadəçi tapılmadı' });
+      // console.log('Backend: User not found after decoding token');
+      return res.status(404).json({ message: "İstifadəçi tapılmadı" });
     }
 
     res.json(user);
   } catch (err) {
-    console.log('Backend: Server error in me function:', err.message);
-    res.status(500).json({ message: 'Server error', error: err.message });
+    // console.log('Backend: Server error in me function:', err.message);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 0,
+    });
+    return res.status(200).json({ message: "Çıxış uğurludur ✅" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { error } = forgotPasswordValidation.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email sahesini bos buraxa bilmezsiniz" });
+    }
+
+    // 1. İstifadəçini emailə görə tap
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json({ message: 'Əgər email sistemdə mövcuddursa, şifrə sıfırlama kodu göndərildi.' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
+    const otpExpires = Date.now() + 1000 * 60 * 10;
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    await user.save();
+    const mailOptions = {
+      from: `"AION" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: 'Şifrə Sıfırlama Kodu',
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px;">
+          <div style="max-width: 600px; margin: auto; background-color: #fff; border-radius: 10px; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+            <h2 style="color:rgb(255, 219, 12);">Salam, ${user.username}!</h2>
+            <p style="font-size: 16px; color: #333;">
+              Şifrənizi sıfırlamaq üçün OTP kodunuz:
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <p style="background-color:rgb(0, 0, 0); color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; font-size: 24px;">
+                ${otp}
+              </p>
+            </div>
+            <p style="font-size: 14px; color: #666;">
+              Bu kod 10 dəqiqə ərzində etibarlıdır. Əgər siz bu əməliyyatı etməmisinizsə, bu mesajı nəzərə almayın.
+            </p>
+            <p style="font-size: 14px; color: #999;">Xoş günlər,<br>AION by Arzuui</p>
+          </div>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({ message: 'Əgər email sistemdə mövcuddursa, şifrə sıfırlama kodu göndərildi.' });
+
+  } catch (error) {
+    console.error('Forgot password error:', error); 
+    return res.status(500).json({ message: "Server xətası", error: error.message });
+  }
+};
+
