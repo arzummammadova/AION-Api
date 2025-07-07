@@ -29,7 +29,10 @@ const UserSchema = new mongoose.Schema({
     emailToken: String,
     emailTokenExpires: Date,
      otp: { type: String },         
-    otpExpires: { type: Date }, 
+    otpExpires: {
+    type: Date,
+    default: null,
+  },
 
 }, { timestamps: true })
 

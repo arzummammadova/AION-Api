@@ -5,6 +5,7 @@ import router from './src/routers/authRoutes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 const app=express();
+
 const PORT=process.env.PORT || 5000;
 app.use(cors({
     origin: ['http://localhost:3000', 'https://space-time-a4q1.vercel.app'],
@@ -12,7 +13,7 @@ app.use(cors({
   }));
 import { swaggerDocs } from './src/utils/swagger.js';
 app.use(cookieParser());
-
+app.use(express.urlencoded({ extended: true }));
 
 swaggerDocs(app); // bunu app.listen-dən əvvəl çağır
 

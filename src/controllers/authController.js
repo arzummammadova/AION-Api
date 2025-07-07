@@ -215,24 +215,38 @@ export const forgotPassword = async (req, res) => {
 
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ message: "Email sahesini bos buraxa bilmezsiniz" });
+      return res
+        .status(400)
+        .json({ message: "Email sahəsini boş buraxa bilməzsiniz." });
     }
 
     // 1. İstifadəçini emailə görə tap
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(200).json({ message: 'Əgər email sistemdə mövcuddursa, şifrə sıfırlama kodu göndərildi.' });
+      // Təhlükəsizlik səbəbiylə, istifadəçi tapılmasa da
+      // kodun göndərildiyi barədə məlumat vermək daha yaxşıdır.
+      return res.status(200).json({
+        message: "Əgər email sistemdə mövcuddursa, şifrə sıfırlama kodu göndərildi.",
+      });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
-    const otpExpires = Date.now() + 1000 * 60 * 10;
+    // OTP yarat və vaxtını təyin et
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 rəqəmli OTP
+    const otpExpires = Date.now() + 1000 * 60 * 10; // 10 dəqiqə
+
+    // OTP və vaxtını istifadəçinin modelinə yaz
     user.otp = otp;
-    user.otpExpires = otpExpires;
-    await user.save();
+    user.otpExpires = new Date(otpExpires); // Date obyekti olaraq qeyd et
+    await user.save(); // Dəyişiklikləri bazaya yaz!
+
+    // Verify səhifəsinin URL-i
+    const verifyPageURL = `${process.env.CLIENT_URL}/auth/otp-verify?email=${encodeURIComponent(email)}`;
+
+    // Email göndərmək üçün mailOptions
     const mailOptions = {
       from: `"AION" <${process.env.EMAIL_USER}>`,
       to: user.email,
-      subject: 'Şifrə Sıfırlama Kodu',
+      subject: "Şifrə Sıfırlama Kodu",
       html: `
         <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px;">
           <div style="max-width: 600px; margin: auto; background-color: #fff; border-radius: 10px; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
@@ -248,6 +262,7 @@ export const forgotPassword = async (req, res) => {
             <p style="font-size: 14px; color: #666;">
               Bu kod 10 dəqiqə ərzində etibarlıdır. Əgər siz bu əməliyyatı etməmisinizsə, bu mesajı nəzərə almayın.
             </p>
+            <a href="${verifyPageURL}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">OTP kodunu bura daxil edin</a>
             <p style="font-size: 14px; color: #999;">Xoş günlər,<br>AION by Arzuui</p>
           </div>
         </div>
@@ -256,11 +271,67 @@ export const forgotPassword = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    return res.status(200).json({ message: 'Əgər email sistemdə mövcuddursa, şifrə sıfırlama kodu göndərildi.' });
-
+    return res.status(200).json({
+      message: "Əgər email sistemdə mövcuddursa, şifrə sıfırlama kodu göndərildi.",
+    });
   } catch (error) {
-    console.error('Forgot password error:', error); 
-    return res.status(500).json({ message: "Server xətası", error: error.message });
+    console.error("Forgot password error:", error);
+    return res
+      .status(500)
+      .json({ message: "Server xətası", error: error.message });
   }
 };
+
+export const otpVerify = async (req, res) => {
+  try {
+    console.log("Received body:", req.body);
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res
+        .status(400)
+        .json({ message: "Email və OTP kodu tələb olunur." });
+    }
+
+    const user = await User.findOne({ email });
+    console.log("User found:", user ? user.email : "No user found");
+
+    if (!user) {
+      return res.status(400).json({ message: "İstifadəçi tapılmadı." });
+    }
+
+    console.log("Stored OTP:", user.otp);
+    console.log("Received OTP:", otp);
+
+    // OTP-ləri string kimi müqayisə etmək üçün, əmin olmaq üçün toString() istifadə edə bilərsiniz
+    if (user.otp !== otp) { // user.otp !== otp.toString() da yoxlaya bilərsiniz
+      return res.status(400).json({ message: "OTP kodu yanlışdır." });
+    }
+
+    console.log("OTP Expires:", user.otpExpires);
+    console.log("Current Time:", Date.now());
+
+    // OtpExpires Date obyekti olduğu üçün Date.now() ilə müqayisə edin
+    if (Date.now() > user.otpExpires.getTime()) { // getTime() dəyərini milisaniyə çevirir
+      return res.status(400).json({ message: "OTP kodunun vaxtı bitmişdir." });
+    }
+
+    console.log("OTP verification successful!");
+
+    // OTP sahələrini sıfırla
+    user.otp = undefined; // Və ya null
+    user.otpExpires = undefined; // Və ya null
+    await user.save(); // Dəyişiklikləri bazaya yaz!
+
+    return res.status(200).json({
+      message: "OTP kodu təsdiqləndi. İndi şifrənizi sıfırlaya bilərsiniz.",
+    });
+  } catch (error) {
+    console.error("OTP yoxlama xətası:", error);
+    return res
+      .status(500)
+      .json({ message: "Server xətası", error: error.message });
+  }
+};
+
 
