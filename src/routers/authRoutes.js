@@ -1,5 +1,5 @@
 import express from 'express';
-import { forgotPassword, login, logout, me, otpVerify, register, verifyEmail } from '../controllers/authController.js';
+import { forgotPassword, login, logout, me, otpVerify, register, resetPassword, verifyEmail } from '../controllers/authController.js';
 
 const router=express.Router();
 
@@ -124,6 +124,7 @@ router.get('/me',me)
 router.get('/logout',logout)
 router.post('/forgot-password',forgotPassword)
 router.post('/otp-verify',otpVerify)
+router.post('/reset-password',resetPassword)
 
 
 export default router;

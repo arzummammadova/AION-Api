@@ -7,6 +7,7 @@ import {
   forgotPasswordValidation,
   loginValidation,
   registerValidation,
+  resetPasswordValidation,
 } from "../validations/userValidation.js";
 import jwt from "jsonwebtoken";
 dotenv.config();
@@ -335,3 +336,36 @@ export const otpVerify = async (req, res) => {
 };
 
 
+export const resetPassword = async (req, res) => {
+  try {
+    const { error } = resetPasswordValidation.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "İstifadəçi tapılmadı." });
+    }
+
+    // Yeni şifrəni hash-ləmək
+    const hashedPassword = await bcrypt.hash(password, 10); // 10 salting round tövsiyə olunur
+
+    // İstifadəçinin şifrəsini yenilə
+    user.password = hashedPassword;
+    // OTP sahələrini təmizləyin (əgər otpVerify tərəfindən təmizlənməyibsə, burada da edə bilərsiniz)
+    user.otp = undefined;
+    user.otpExpires = undefined;
+
+    await user.save(); // Dəyişiklikləri bazaya yaz
+
+    return res.status(200).json({ message: "Şifrəniz uğurla sıfırlandı." });
+
+  } catch (error) {
+    console.error("Şifrə sıfırlama xətası:", error);
+    return res.status(500).json({ message: "Server xətası", error: error.message });
+  }
+};
