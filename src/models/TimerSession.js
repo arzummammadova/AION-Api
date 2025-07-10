@@ -1,40 +1,51 @@
-// models/TimerSession.js
 
-import mongoose from 'mongoose'; 
+import mongoose from 'mongoose';
 
 const TimerSessionSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // 'User' sizin istifadəçi schema adınız olmalıdır
+        ref: 'User',
         required: true,
     },
-    selectedDuration: {
-        type: Number, // İstifadəçinin seçdiyi müddət (5, 10, 25 dəqiqə kimi)
+    selectedDuration: { // Dəqiqə ilə seçilmiş ümumi müddət (misal: 25 dəqiqə)
+        type: Number,
         required: true,
-        // Bu sahəni əlavə etmək vacibdir ki, istifadəçinin hansı zamanı seçdiyini bilək.
-        // `duration` isə actual işləyən vaxt olacaq.
     },
-    startTime: {
-        type: Date, // Taymerin başladığı vaxt
+    startTime: { // Taymerin ilk başladığı vaxt
+        type: Date,
         required: true,
-        default: Date.now // Yeni bir sessiya yaradılanda avtomatik qeyd edilsin
+        default: Date.now,
     },
-    endTime: {
-        type: Date, // Taymerin dayandığı/bitdiyi vaxt (əgər hələ bitməyibsə, null olacaq)
-        default: null // Bura `required: true` olmamalıdır, çünki taymer hələ işləyə bilər.
+    endTime: { // Taymerin dayandırıldığı və ya tamamlandığı vaxt
+        type: Date,
+        default: null,
     },
-    elapsedTime: {
-        type: Number, // Taymerin əslində işlədiyi müddət (saniyə ilə)
-        default: 0 // Başlangıcda 0 olacaq
+    elapsedTime: { // Taymerin hal-hazırda işlədiyi ümumi saniyə (fasilələr nəzərə alınmadan)
+        type: Number,
+        default: 0,
     },
-    status: {
-        type: String, // Taymerin cari vəziyyəti: 'running', 'stopped', 'completed', 'reset'
-        enum: ['running', 'stopped', 'completed', 'reset'], // Yalnız bu dəyərləri qəbul etsin
-        required: true,
-        default: 'running' // Yeni bir taymer sessiyası başlayanda varsayılan olaraq 'running' olsun
+    status: { // 'running', 'paused', 'stopped', 'completed'
+        type: String,
+        enum: ['running', 'paused', 'stopped', 'completed', 'reset'], // 'paused' əlavə edildi
+        default: 'running',
+    },
+    pauseStartTime: { // Taymerin fasiləyə verildiyi vaxt - YENİ
+        type: Date,
+        default: null,
+    },
+    totalPausedTime: { // Ümumi fasilə verilmiş vaxt (saniyə ilə) - YENİ
+        type: Number,
+        default: 0,
+    },
+    name: {
+        type: String,
+        default: 'Adsız Taymer', // Əgər ad verilməzsə, bu dəyəri götürsün
+        trim: true, // Boşluqları kəssin
     }
-}, {
-    timestamps: true // `createdAt` və `updatedAt` sahələrini avtomatik əlavə edir. Bu çox faydalıdır!
-});
 
-export default mongoose.model('TimerSession', TimerSessionSchema);
+    // Əlavə dəyişikliklər üçün gələcəkdə "remainingTime" və ya "lastUpdated" kimi sahələr də əlavə edilə bilər.
+}, { timestamps: true });
+
+const TimerSession = mongoose.model('TimerSession', TimerSessionSchema);
+
+export default TimerSession;
