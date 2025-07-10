@@ -10,6 +10,7 @@ const TimerSessionSchema = new mongoose.Schema({
     selectedDuration: { // Dəqiqə ilə seçilmiş ümumi müddət (misal: 25 dəqiqə)
         type: Number,
         required: true,
+      
     },
     startTime: { // Taymerin ilk başladığı vaxt
         type: Date,
@@ -41,7 +42,13 @@ const TimerSessionSchema = new mongoose.Schema({
         type: String,
         default: 'Adsız Taymer', // Əgər ad verilməzsə, bu dəyəri götürsün
         trim: true, // Boşluqları kəssin
+    },
+    note: { // YENİ: Əlavə qeydlər üçün
+        type: String,
+        default: '',
+        trim: true,
     }
+
 
     // Əlavə dəyişikliklər üçün gələcəkdə "remainingTime" və ya "lastUpdated" kimi sahələr də əlavə edilə bilər.
 }, { timestamps: true });

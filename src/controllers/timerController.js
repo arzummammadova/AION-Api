@@ -2,10 +2,49 @@ import TimerSession from "../models/TimerSession.js";
 
 
 
+// export const startTimerSession = async (req, res) => {
+//     try {
+//         const userId = req.user.id;
+//         const { selectedDuration } = req.body;
+
+//         let timerSession;
+//         timerSession = await TimerSession.findOne({ userId, status: { $in: ['paused', 'reset'] } });
+
+//         if (timerSession) {
+//             if (timerSession.status === 'paused' && timerSession.pauseStartTime) {
+//                 const pausedDuration = (new Date().getTime() - timerSession.pauseStartTime.getTime()) / 1000;
+//                 timerSession.totalPausedTime += pausedDuration;
+//                 timerSession.pauseStartTime = null;
+//             }
+//             timerSession.status = 'running';
+//             await timerSession.save();
+//             return res.status(200).json({ message: 'Taymer sessiyası davam etdirildi.', timerSession });
+//         } else {
+//             timerSession = new TimerSession({
+//                 userId,
+//                 selectedDuration,
+//                 startTime: new Date(),
+//                 status: 'running',
+//                 elapsedTime: 0,
+//                 totalPausedTime: 0,
+                
+//             });
+//             await timerSession.save();
+//             return res.status(201).json({ message: 'Yeni taymer sessiyası yaradıldı və başladı.', timerSession });
+//         }
+
+//     } catch (error) {
+//         console.error('Taymer sessiyası başlatıla bilmədi:', error);
+//         res.status(500).json({ message: 'Server xətası, taymer sessiyası başlatıla bilmədi.' });
+//     }
+// };
+
+
+
 export const startTimerSession = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { selectedDuration } = req.body;
+        const { selectedDuration, name, note } = req.body; 
 
         let timerSession;
         timerSession = await TimerSession.findOne({ userId, status: { $in: ['paused', 'reset'] } });
@@ -20,6 +59,7 @@ export const startTimerSession = async (req, res) => {
             await timerSession.save();
             return res.status(200).json({ message: 'Taymer sessiyası davam etdirildi.', timerSession });
         } else {
+            // Yeni taymer yaradılır
             timerSession = new TimerSession({
                 userId,
                 selectedDuration,
@@ -27,7 +67,8 @@ export const startTimerSession = async (req, res) => {
                 status: 'running',
                 elapsedTime: 0,
                 totalPausedTime: 0,
-                
+                name: name || 'Adsız Taymer', // 'name' varsa istifadə et, yoxsa default dəyəri
+                note: note || '' // 'note' varsa istifadə et, yoxsa boş string
             });
             await timerSession.save();
             return res.status(201).json({ message: 'Yeni taymer sessiyası yaradıldı və başladı.', timerSession });
@@ -38,7 +79,6 @@ export const startTimerSession = async (req, res) => {
         res.status(500).json({ message: 'Server xətası, taymer sessiyası başlatıla bilmədi.' });
     }
 };
-
 export const pauseTimerSession = async (req, res) => {
     try {
         const { timerId } = req.params;
@@ -159,9 +199,73 @@ export const deleteTimerSession = async (req, res) => {
     }
 };
 
+// ... digər importlar
 
+export const updateTimerSessionDetails = async (req, res) => {
+    try {
+        const { timerId } = req.params;
+        const { name, note } = req.body; // Userdən gələcək yeni ad və qeyd
+        const userId = req.user.id;
 
+        const timerSession = await TimerSession.findOne({ _id: timerId, userId });
 
+        if (!timerSession) {
+            return res.status(404).json({ message: 'Bu taymer sessiyası tapılmadı və ya sizə aid deyil.' });
+        }
+
+        // Yalnız 'name' və ya 'note' sahələrini yenilə
+        if (name !== undefined) {
+            timerSession.name = name;
+        }
+        if (note !== undefined) {
+            timerSession.note = note;
+        }
+
+        await timerSession.save();
+        res.status(200).json({ message: 'Taymer sessiyasının məlumatları uğurla yeniləndi.', timerSession });
+
+    } catch (error) {
+        console.error('Taymer sessiyasının məlumatları yenilənə bilmədi:', error);
+        res.status(500).json({ message: 'Server xətası, taymer sessiyasının məlumatları yenilənə bilmədi.' });
+    }
+};
+
+export const updateTimerSession = async (req, res) => {
+    try {
+        const { timerId } = req.params; // URL-dən sessiya ID-sini alırıq
+        const { name } = req.body;     // Request body-dən yeni adı alırıq
+
+        // Adın boş olub-olmadığını yoxlayırıq
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ message: "Sessiya adı boş ola bilməz." });
+        }
+
+        // Taymer sessiyasını ID-yə görə tapırıq
+        const timer = await TimerSession.findById(timerId);
+
+        // Əgər sessiya tapılmazsa
+        if (!timer) {
+            return res.status(404).json({ message: "Taymer sessiyası tapılmadı." });
+        }
+
+        // Təhlükəsizlik üçün: cari istifadəçinin sessiyanın sahibi olub-olmadığını yoxlayın
+        // Əgər istifadəçi doğrulama (authentication) istifadə edirsinizsə:
+        // if (timer.user.toString() !== req.user.id) {
+        //     return res.status(403).json({ message: "Bu sessiyayı redaktə etmək üçün icazəniz yoxdur." });
+        // }
+
+        // Sessiyanın adını yeniləyirik
+        timer.name = name.trim();
+        await timer.save(); // Dəyişiklikləri bazaya yazırıq
+
+        // Yenilənmiş sessiyanı cavab olaraq qaytarırıq
+        res.status(200).json(timer);
+
+    } catch (error) {
+        console.error("Taymer sessiyasının adı yenilənərkən xəta baş verdi:", error);
+        res.status(500).json({ message: "Taymer sessiyasının adı yenilənə bilmədi", error: error.message });
+    }
+};
 // export const createTimerSession = async (req, res) => {
 //     try {
 //         const { selectedDuration } = req.body;
