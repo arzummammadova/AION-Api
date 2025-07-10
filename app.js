@@ -2,6 +2,7 @@ import express from 'express';
 import 'dotenv/config'
 import './src/db/connectionDB.js'
 import router from './src/routers/authRoutes.js';
+import timerRoutes from './src/routers/timerRoutes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 const app=express();
@@ -23,6 +24,7 @@ app.get('/',(req,res)=>{
 })
 
 app.use('/api/auth',router)
+app.use('/api',timerRoutes)
 app.listen(PORT,()=>{
     console.log(`Server is running http://localhost:${PORT}`);
     console.log(`Swagger sənədi: http://localhost:${PORT}/api-docs`);
