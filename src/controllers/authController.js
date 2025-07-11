@@ -369,3 +369,37 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({ message: "Server xətası", error: error.message });
   }
 };
+
+export const uploadUserBackgroundImage = async (req, res) => {
+    // Multer faylı req.file-də yerləşdirəcək
+    if (!req.file) {
+        return res.status(400).json({ message: 'Şəkil yüklənməyib.' });
+    }
+
+    const user = await User.findById(req.user._id); // protect middleware-dən gələn istifadəçi
+
+    if (!user) {
+        return res.status(404).json({ message: 'İstifadəçi tapılmadı.' });
+    }
+
+    try {
+        // req.file Multer tərəfindən Cloudinary-dən gələn məlumatları ehtiva edəcək
+        // Əgər multer-storage-cloudinary istifadə edirsinizsə, artıq Cloudinary-ə yüklənmiş olacaq.
+        user.backgroundImage = req.file.path; // req.file.path Cloudinary URL-i olacaq
+        user.cloudinaryPublicId = req.file.filename; // Cloudinary public ID-sini də saxlamaq faydalıdır (silmək üçün)
+
+        const updatedUser = await user.save();
+
+        res.json({
+            _id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            backgroundImage: updatedUser.backgroundImage,
+            token: generateToken(updatedUser._id),
+            message: 'Fon şəkli uğurla yükləndi və yeniləndi.'
+        });
+    } catch (error) {
+        console.error("Fon şəkli yüklənərkən xəta baş verdi:", error);
+        res.status(500).json({ message: "Fon şəkli yüklənə bilmədi", error: error.message });
+    }
+};

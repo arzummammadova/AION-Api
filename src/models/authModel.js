@@ -1,39 +1,44 @@
-import mongoose from 'mongoose';
-const UserSchema = new mongoose.Schema({
+import mongoose from "mongoose";
+const UserSchema = new mongoose.Schema(
+  {
     username: {
-        type: String,
-        required: true,
-        unique: true,
-        minlength: 3,
-        maxlength: 20,
-      },
-      email: {
-        type: String,
-        required: true,
-        unique: true,
-        match: [/.+\@.+\..+/, 'Zəhmət olmasa düzgün email daxil edin'],
-      },
-      password: {
-        type: String,
-        required: true,
-        minlength: 6,
-        maxlength: 60,
-      },
+      type: String,
+      required: true,
+      unique: true,
+      minlength: 3,
+      maxlength: 20,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      match: [/.+\@.+\..+/, "Zəhmət olmasa düzgün email daxil edin"],
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+      maxlength: 60,
+    },
     role: {
-        type: String,
-        enum: ["admin", "user"],
-        default: "user",
-    }
-    ,
+      type: String,
+      enum: ["admin", "user"],
+      default: "user",
+    },
     isVerified: { type: Boolean, default: false },
     emailToken: String,
     emailTokenExpires: Date,
-     otp: { type: String },         
+    otp: { type: String },
     otpExpires: {
-    type: Date,
-    default: null,
+      type: Date,
+      default: null,
+    },
+      backgroundImage: { // YENİ: İstifadəçinin seçdiyi fon şəkli
+        type: String,
+        default: '/backgrounds/default.jpg', // Default fon şəkli
+    },
   },
+  { timestamps: true }
+);
 
-}, { timestamps: true })
-
-export default mongoose.model("User", UserSchema)
+export default mongoose.model("User", UserSchema);

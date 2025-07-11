@@ -7,9 +7,11 @@ import {
   otpVerify,
   register,
   resetPassword,
+  uploadUserBackgroundImage,
   verifyEmail
 } from '../controllers/authController.js';
-
+import upload from '../middleware/upload.js'; 
+import auth from '../middleware/auth.js';
 const router = express.Router();
 
 /**
@@ -211,5 +213,7 @@ router.get('/logout', logout);
 router.post('/forgot-password', forgotPassword);
 router.post('/otp-verify', otpVerify);
 router.post('/reset-password', resetPassword);
+router.post('/profile/background',auth, upload.single('backgroundImage'), uploadUserBackgroundImage);
+
 
 export default router;
