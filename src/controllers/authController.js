@@ -202,20 +202,49 @@ export const me = async (req, res) => {
   }
 };
 
+// export const logout = async (req, res) => {
+//   try {
+//     res.clearCookie("token", {
+//       httpOnly: true,
+//       sameSite: "lax",
+//       maxAge: 0,
+//     });
+//     return res.status(200).json({ message: "Çıxış uğurludur ✅" });
+//   } catch (error) {
+//     return res
+//       .status(500)
+//       .json({ message: "Server error", error: error.message });
+//   }
+// };
+
+
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
+    // These options MUST EXACTLY MATCH those used when the cookie was set during login
+    const cookieOptions = {
       httpOnly: true,
-      sameSite: "lax",
-      maxAge: 0,
-    });
+      secure: process.env.NODE_ENV === 'production', // Match login's 'secure'
+      // For sameSite: 'none', it's crucial to also have 'secure: true'.
+      // If secure is false (e.g., in development), then sameSite must not be 'none'.
+      // It's generally safest to apply the same conditional logic.
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Match login's 'sameSite'
+      // You might also need to explicitly set 'path' and 'domain' if they were used when setting the cookie.
+      // If not specified during setting, they default to the path of the request that set it and the current domain.
+      // path: '/', // Often a good default if your cookie is site-wide
+      // domain: 'aion-api.onrender.com' // Only if you explicitly set a domain when creating the cookie
+    };
+
+    res.clearCookie("token", cookieOptions);
+
     return res.status(200).json({ message: "Çıxış uğurludur ✅" });
   } catch (error) {
+    console.error("Logout error:", error); // Log the error for debugging
     return res
       .status(500)
-      .json({ message: "Server error", error: error.message });
+      .json({ message: "Server xətası", error: error.message });
   }
 };
+
 
 export const forgotPassword = async (req, res) => {
   try {
