@@ -139,12 +139,24 @@ export const login = async (req, res) => {
     //   sameSite: 'none',
     //   maxAge: 60 * 60 * 1000,
     // });
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   // secure: process.env.NODE_ENV === 'production', // remove or set to false for local HTTP
+    //   sameSite: "lax", // or 'none' if testing
+    //   maxAge: 60 * 60 * 1000,
+    // });
+
     res.cookie("token", token, {
-      httpOnly: true,
-      // secure: process.env.NODE_ENV === 'production', // remove or set to false for local HTTP
-      sameSite: "lax", // or 'none' if testing
-      maxAge: 60 * 60 * 1000,
-    });
+    httpOnly: true,
+    // Production-da mütləq `secure: true` olsun!
+    secure: process.env.NODE_ENV === 'production', 
+    // Frontend və Backend fərqli domenlərdədirsə 'none' istifadə edin
+    // Və 'none' ilə birlikdə mütləq 'secure: true' olmalıdır.
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Lokalda 'lax', prodakşında 'none'
+    maxAge: 60 * 60 * 1000, // 1 saat
+    // Optional: əgər ehtiyac olarsa domain də əlavə edin
+    // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost' 
+});
     return res.status(200).json({
       message: "Giriş uğurludur ✅",
       token,
