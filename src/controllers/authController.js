@@ -147,7 +147,7 @@ export const login = async (req, res) => {
     // });
 
     res.cookie("token", token, {
-    httpOnly: true,
+    // httpOnly: true,
     // Production-da mütləq `secure: true` olsun!
     secure: process.env.NODE_ENV === 'production', 
     // Frontend və Backend fərqli domenlərdədirsə 'none' istifadə edin
