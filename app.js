@@ -10,8 +10,9 @@ const app=express();
 
 const PORT=process.env.PORT || 5000;
 app.use(cors({
-    origin: ['http://localhost:3000','https://aion-htcbcy0nm-arzuis-projects.vercel.app', 'https://space-time-a4q1.vercel.app'],
+    origin: ['http://localhost:3000','https://aion-htcbcy0nm-arzuis-projects.vercel.app', 'https://aion-eosin.vercel.app','https://space-time-a4q1.vercel.app'],
     credentials: true
+    
   }));
 import { swaggerDocs } from './src/utils/swagger.js';
 app.use(cookieParser());
